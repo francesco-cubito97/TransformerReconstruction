@@ -8,7 +8,7 @@ import argparse
 import torch
 import torch.nn as nn
 from pytorch_transformers.modeling_bert import BertConfig
-from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
+from torchvision.models import mobilenet_v3_small#, MobileNet_V3_Small_Weights
 
 from network.exec import run, runEvalAndSave
 from utils.logger import Logger
