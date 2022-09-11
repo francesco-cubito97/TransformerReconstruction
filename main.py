@@ -156,7 +156,8 @@ def main(args):
         
         # Adding backbone
         args.logger.createLog("MAIN", "Using pre-trained model 'MobileNetV3'")
-        backbone = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.DEFAULT)
+        #backbone = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.DEFAULT)
+        backbone = mobilenet_v3_small(pretrained=True)
         # Remove the classification module
         classifier = list(backbone.classifier.children())[:-1]
         backbone.classifier = nn.Sequential(*classifier)
