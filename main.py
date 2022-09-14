@@ -37,7 +37,7 @@ def parseArguments():
                         help="Yaml file with all data for training.")
     parser.add_argument("--eval_yaml", default='freihand/test.yaml', type=str, required=False,
                         help="Yaml file with all data for evaluation.")
-    parser.add_argument("--num_workers", default=4, type=int, 
+    parser.add_argument("--num_workers", default=2, type=int, 
                         help="Workers in dataloader.")       
     parser.add_argument("--img_scale_factor", default=1, type=int, 
                         help="adjust image resolution.")  
@@ -61,6 +61,7 @@ def parseArguments():
                         help="The initial learning rate.")
     parser.add_argument("--num_train_epochs", default=200, type=int, 
                         help="Total number of training epochs")
+    parser.add_argument("--epoch_to_stop", default=30, type=int, help="Number of epochs before stopping")
     parser.add_argument("--vertices_loss_weight", default=1.0, type=float)          
     parser.add_argument("--joints_loss_weight", default=1.0, type=float)
     parser.add_argument("--pose_loss_weight", default=1.0, type=float)
