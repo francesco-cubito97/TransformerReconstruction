@@ -207,10 +207,10 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         # Compute 3d regressed joints loss 
         loss_reg_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints_from_mesh, gt_3d_joints_with_tag, has_3d_joints)
         # Compute 2d joints loss
-        loss_2d_joints = joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
-                         joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
+        loss_2d_joints = 0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
+                         0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
         
-        loss_3d_joints = loss_3d_joints + loss_reg_3d_joints
+        loss_3d_joints = 0.5 * loss_3d_joints + 0.5 * loss_reg_3d_joints
             
         loss = args.joints_loss_weight * loss_3d_joints + \
                args.vertices_loss_weight * loss_vertices + \
@@ -249,7 +249,7 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                 
         # Save a checkpoint and visualize partial results obtained
         if iteration % iters_per_epoch == 0:
-            if epoch%5==0:
+            if epoch%10 == 0:
                 saveCheckpoint(TransRecon_model, args, epoch, iteration)
                 visual_imgs = visualizeMesh(renderer,
                                             annotations['ori_img'].detach(),
@@ -264,6 +264,10 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                 stamp = str(epoch) + '_' + str(iteration)
                 temp_fname = args.output_dir + 'visual_' + stamp + '.jpg'
                 cv2.imwrite(temp_fname, np.asarray(visual_imgs[:, :, ::-1]*255))
+                
+                # Early stopping
+                if(epoch == args.epoch_to_stop):
+                    exit()
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
