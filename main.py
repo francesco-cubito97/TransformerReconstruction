@@ -87,7 +87,7 @@ def parseArguments():
                         help="Update model config if given.")
     parser.add_argument("--input_feat_dim", default='1025,256,64', type=str, 
                         help="Input image feature dimensions")          
-    parser.add_argument("--hidden_feat_dim", default='512,128,32', type=str, 
+    parser.add_argument("--hidden_feat_dim", default='512,128', type=str, 
                         help="Hidden image freature dimensions")   
 
     parser.add_argument("--multiscale_inference", default=False, type=bool)
