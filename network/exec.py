@@ -249,7 +249,7 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                 
         # Save a checkpoint and visualize partial results obtained
         if iteration % iters_per_epoch == 0:
-            if epoch%10 == 0:
+            if epoch%5 == 0:
                 saveCheckpoint(TransRecon_model, args, epoch, iteration)
                 visual_imgs = visualizeMesh(renderer,
                                             annotations['ori_img'].detach(),
@@ -257,17 +257,14 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                                             pred_vertices.detach(), 
                                             pred_camera.detach(),
                                             pred_2d_joints_from_mesh.detach())
-                visual_imgs = visual_imgs.transpose(0,1)
-                visual_imgs = visual_imgs.transpose(1,2)
+                #visual_imgs = visual_imgs.transpose(0,1)
+                #visual_imgs = visual_imgs.transpose(1,2)
+                visual_imgs = torch.einsum("abc -> bca", visual_imgs)
                 visual_imgs = np.asarray(visual_imgs)
 
                 stamp = str(epoch) + '_' + str(iteration)
                 temp_fname = args.output_dir + 'visual_' + stamp + '.jpg'
                 cv2.imwrite(temp_fname, np.asarray(visual_imgs[:, :, ::-1]*255))
-                
-                # Early stopping
-                if(epoch == args.epoch_to_stop):
-                    exit()
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
