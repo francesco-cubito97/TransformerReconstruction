@@ -76,7 +76,7 @@ def parseArguments():
     parser.add_argument('--joint_rot_mode', default='axisang', choices=['rotmat', 'axisang'], help="Joint rotation inputs")
     parser.add_argument('--mano_ncomps', default=45, type=int, help="Number of PCA components")
     
-    parser.add_argument("--num_hidden_layers", default=4, type=int, required=False, 
+    parser.add_argument("--num_hidden_layers", default=2, type=int, required=False, 
                         help="Update model config if given")
     parser.add_argument("--hidden_size", default=-1, type=int, required=False, 
                         help="Update model config if given")
