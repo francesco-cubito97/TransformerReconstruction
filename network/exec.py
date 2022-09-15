@@ -17,7 +17,7 @@ from . import mano_config as cfg
 from utils.geometric_layers import orthographicProjection
 from utils.render import visualizeMesh
 
-def saveCheckpoint(model, args, epoch, iteration, num_trial=10):
+def saveCheckpoint(model, args, epoch, iteration, optimizer, scaler, num_trial=10):
     if args.checkpoint_dir is not None:
         checkpoint_dir = path.join(args.checkpoint_dir, 'checkpoint-{}-{}'.format(
             epoch, iteration))
@@ -32,6 +32,8 @@ def saveCheckpoint(model, args, epoch, iteration, num_trial=10):
             torch.save(model_to_save, path.join(checkpoint_dir, 'model.bin'))
             torch.save(model_to_save.state_dict(), path.join(checkpoint_dir, 'state_dict.bin'))
             torch.save(args, path.join(checkpoint_dir, 'training_args.bin'))
+            torch.save(optimizer.state_dict(), path.join(checkpoint_dir, 'opt_state_dict.bin'))
+            torch.save(scaler.state_dict(), path.join(checkpoint_dir, 'scaler_state_dict.bin'))
             args.logger.createLog("SAVE_CHECKPOINT", "Save checkpoint to {}".format(checkpoint_dir))
             break
         except:
@@ -213,7 +215,8 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
             loss_2d_joints = 0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
                              0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
 
-            loss_3d_joints = 0.5 * loss_3d_joints + 0.5 * loss_reg_3d_joints
+            loss_3d_joints = 0.5 * loss_3d_joints + \
+                             0.5 * loss_reg_3d_joints
             
             loss = args.joints_loss_weight * loss_3d_joints + \
                    args.vertices_loss_weight * loss_vertices + \
@@ -261,7 +264,7 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         # Save a checkpoint and visualize partial results obtained
         if iteration % iters_per_epoch == 0:
             if epoch%5 == 0:
-                saveCheckpoint(TransRecon_model, args, epoch, iteration)
+                saveCheckpoint(TransRecon_model, args, epoch, iteration, optimizer, scaler)
                 visual_imgs = visualizeMesh(renderer,
                                             annotations['ori_img'].detach(),
                                             annotations['joints_2d'].detach(),
