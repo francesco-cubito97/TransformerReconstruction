@@ -233,18 +233,15 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         log_losses.update(loss.item(), batch_size)
         
         # Backward-pass
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
+        loss.backward() 
+        optimizer.step()
+        optimizer.zero_grad()
+        #scaler.scale(loss).backward()
+        #scaler.step(optimizer)
 
         # Updates the scale for next iteration.
-        scaler.update()
-
-        optimizer.zero_grad()
+        #scaler.update()
         
-        #optimizer.zero_grad()
-        #loss.backward() 
-        #optimizer.step()
-
         batch_time.update(time.time() - end)
         end = time.time()
 
