@@ -207,8 +207,8 @@ class TransRecon_Network(torch.nn.Module):
         self.trans_encoder = trans_encoder
 
         self.cam_param_fc1 = torch.nn.Linear(3, 1)
-        self.cam_param_fc2 = torch.nn.Linear(cfg.VERT_SUB_NUM + cfg.JOIN_NUM, 150) 
-        self.cam_param_fc3 = torch.nn.Linear(150, 3)
+        self.cam_param_fc2 = torch.nn.Linear(cfg.VERT_NUM + cfg.JOIN_NUM, 250) 
+        self.cam_param_fc3 = torch.nn.Linear(250, 3)
 
     def forward(self, images, mano_model, mesh_sampler, meta_masks=None, is_train=False):
         batch_size = images.size(0)
@@ -264,8 +264,9 @@ class TransRecon_Network(torch.nn.Module):
         
         # Subsample the number of vertices to simplify the camera
         # parameters network the most possible
-        pred_vertices_sub = mesh_sampler.downsample(pred_vertices)
-
+        #pred_vertices_sub = mesh_sampler.downsample(pred_vertices)
+        pred_vertices_sub = pred_vertices.clone()
+        
         #self.args.logger.createLog("NETWORK", "Predicted vertices downsampled shape: {}".format(pred_vertices_sub.shape))
 
         predictions = torch.cat([pred_vertices_sub, pred_3d_joints], dim=1)
