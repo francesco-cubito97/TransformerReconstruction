@@ -211,11 +211,10 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         # Compute 3d regressed joints loss 
         loss_reg_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints_from_mesh, gt_3d_joints_with_tag, has_3d_joints)
         # Compute 2d joints loss
-        loss_2d_joints = 0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
-                         0.5 * joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
+        loss_2d_joints = joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
+                         joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
 
-        loss_3d_joints = 0.5 * loss_3d_joints + \
-                         0.5 * loss_reg_3d_joints
+        loss_3d_joints = loss_3d_joints + loss_reg_3d_joints
 
         loss = args.joints_loss_weight * loss_3d_joints + \
                args.vertices_loss_weight * loss_vertices + \
