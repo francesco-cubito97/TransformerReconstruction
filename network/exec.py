@@ -205,8 +205,8 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         loss_vertices = verticesLoss(criterion_vertices, pred_vertices, gt_vertices, has_mesh)
 
         # Compute pose and betas losses
-        loss_pose = poseLoss(criterion_pose, pred_pose, gt_pose)
-        loss_betas = betasLoss(criterion_betas, pred_betas, gt_betas)
+        #loss_pose = poseLoss(criterion_pose, pred_pose, gt_pose)
+        #loss_betas = betasLoss(criterion_betas, pred_betas, gt_betas)
 
         # Compute 3d regressed joints loss 
         loss_reg_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints_from_mesh, gt_3d_joints_with_tag, has_3d_joints)
@@ -218,13 +218,11 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
 
         loss = args.joints_loss_weight * loss_3d_joints + \
                args.vertices_loss_weight * loss_vertices + \
-               args.vertices_loss_weight * loss_2d_joints + \
-               args.pose_loss_weight * loss_pose + \
-               args.betas_loss_weight * loss_betas
+               args.vertices_loss_weight * loss_2d_joints 
 
         # Update logs
-        log_loss_pose.update(loss_pose.item(), batch_size)
-        log_loss_betas.update(loss_betas.item(), batch_size)
+        #log_loss_pose.update(loss_pose.item(), batch_size)
+        #log_loss_betas.update(loss_betas.item(), batch_size)
         log_loss_3djoints.update(loss_3d_joints.item(), batch_size)
         log_loss_2djoints.update(loss_2d_joints.item(), batch_size)
         log_loss_vertices.update(loss_vertices.item(), batch_size)
