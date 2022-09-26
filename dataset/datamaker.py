@@ -4,6 +4,8 @@ Licensed under the MIT license.
 
 """
 
+# TODO make it simpler
+
 import os.path as op
 import torch
 

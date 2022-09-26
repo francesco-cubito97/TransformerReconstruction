@@ -21,7 +21,20 @@ VERT_NUM = 778
 VERT_SUB_NUM = 195
 
 # Finger tip indices right hand
-FINGERTIPS_RIGHT = [745, 317, 444, 556, 673]
+FINGERTIPS_RIGHT = [745, 
+                    317, 
+                    444, 
+                    556, 
+                    673]
+
+# Mapping keypoints to vertices
+KEY2VERT = {
+                 4: [744],  #ThumbT
+                 8: [320],  #IndexT
+                 12: [443],  #MiddleT
+                 16: [555],  #RingT
+                 20: [672]  #PinkT
+                 }
 
 # Joints
 J_NAME = ('Wrist', 'Thumb_1', 'Thumb_2', 'Thumb_3', 'Thumb_4', 'Index_1', 'Index_2', 'Index_3', 'Index_4', 'Middle_1',

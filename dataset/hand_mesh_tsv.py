@@ -16,6 +16,7 @@ from utils.tsv_file import TSVFile, CompositeTSVFile
 from utils.tsv_file_ops import load_linelist_file, load_from_yaml_file, find_file_path_in_yaml
 from utils.image_ops import img_from_base64, crop, flip_img, flip_pose, flip_kp, transform, rot_aa
 
+# TODO remove this to work with other datasets
 
 class HandMeshTSVDataset(object):
     def __init__(self, args, img_file, label_file=None, hw_file=None,

@@ -69,13 +69,14 @@ def parseArguments():
     parser.add_argument("--drop_out", default=0.1, type=float, 
                         help="Drop out ratio in BERT.")
 
-    #---------------------------MODEL PARAMS---------------------------#
+    #---------------------------MANO PARAMS---------------------------#
     parser.add_argument("--use_pca", default=False, type=bool, help="Give axis-angle or rotation matrix as inputs or use PCA coefficients")
     parser.add_argument("--flat_hand_mean", default=False, type=bool, help="Use flat hand as mean instead of average hand pose")
     parser.add_argument('--root_rot_mode', default='axisang', choices=['rot6d', 'axisang'])
     parser.add_argument('--joint_rot_mode', default='axisang', choices=['rotmat', 'axisang'], help="Joint rotation inputs")
     parser.add_argument('--mano_ncomps', default=45, type=int, help="Number of PCA components")
     
+    #---------------------------MODEL PARAMS---------------------------#
     parser.add_argument("--num_hidden_layers", default=4, type=int, required=False, 
                         help="Update model config if given")
     parser.add_argument("--hidden_size", default=-1, type=int, required=False, 
