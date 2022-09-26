@@ -16,6 +16,7 @@ from . import mano_config as cfg
 
 # TODO use MANO just to get ground truth mesh and joints
 # TODO modify encoder
+# TODO remove downsampling and change camera parameters estimation
 
 class Mano(nn.Module):
     def __init__(self, args):
