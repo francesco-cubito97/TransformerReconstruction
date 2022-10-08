@@ -27,7 +27,7 @@ def parseArguments():
     #-----------------------------INITIALIZATION-----------------------------#
     parser.add_argument("--device", type=str, default='cuda', 
                         help="cuda or cpu")
-    parser.add_argument('--seed', type=int, default=88, 
+    parser.add_argument('--seed', type=int, default=99, 
                         help="random seed for initialization.")
 
     #------------------------------DATA ARGUMENT------------------------------#
