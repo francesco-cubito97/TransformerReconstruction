@@ -185,47 +185,50 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         # Prepare masks for 3d joints modeling
         #mpm_mask_ = mpm_mask.expand(-1, -1, 576)
         mjm_mask_ = mjm_mask.expand(-1, -1, 576)
-        #meta_masks = torch.cat([mpm_mask_, mbm_mask_], dim=1)
+        meta_masks = mjm_mask_#torch.cat([mpm_mask_, mbm_mask_], dim=1)
         
         # Forward-pass
-        pred_camera, pred_3d_joints, pred_vertices_sub, pred_vertices, pred_pose, pred_betas = TransRecon_model(images, mano_model, mesh_sampler, 
-                                                                                                               meta_masks=meta_masks, is_train=True)
-
+        #pred_camera, pred_3d_joints, pred_vertices_sub, pred_vertices, pred_pose, pred_betas = TransRecon_model(images, mano_model, mesh_sampler, 
+        #                                                                                                       meta_masks=meta_masks, is_train=True)
+        pred_camera, pred_3d_joints =  TransRecon_model(images, mano_model, mesh_sampler, meta_masks=meta_masks, is_train=True)
+        
         # Regress 3d joints from the mesh
-        pred_3d_joints_from_mesh = mano_model.get3dJointsFromMesh(pred_vertices)
+        #pred_3d_joints_from_mesh = mano_model.get3dJointsFromMesh(pred_vertices)
 
         # Obtain 2d joints from regressed ones and from MANO ones
-        pred_2d_joints_from_mesh = orthographicProjection(pred_3d_joints_from_mesh.contiguous(), pred_camera.contiguous())
+        #pred_2d_joints_from_mesh = orthographicProjection(pred_3d_joints_from_mesh.contiguous(), pred_camera.contiguous())
         pred_2d_joints = orthographicProjection(pred_3d_joints.contiguous(), pred_camera.contiguous())
 
         # Compute 3d joint loss 
         loss_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints, gt_3d_joints_with_tag, has_3d_joints)
 
         # Compute 3d vertices loss
-        loss_vertices = verticesLoss(criterion_vertices, pred_vertices, gt_vertices, has_mesh)
+        #loss_vertices = verticesLoss(criterion_vertices, pred_vertices, gt_vertices, has_mesh)
 
         # Compute pose and betas losses
         #loss_pose = poseLoss(criterion_pose, pred_pose, gt_pose)
         #loss_betas = betasLoss(criterion_betas, pred_betas, gt_betas)
 
         # Compute 3d regressed joints loss 
-        loss_reg_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints_from_mesh, gt_3d_joints_with_tag, has_3d_joints)
+        #loss_reg_3d_joints = joints3dLoss(criterion_joints, pred_3d_joints_from_mesh, gt_3d_joints_with_tag, has_3d_joints)
         # Compute 2d joints loss
-        loss_2d_joints = joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
-                         joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
+        #loss_2d_joints = joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)  + \
+        #                 joints2dLoss(criterion_2d_keypoints, pred_2d_joints_from_mesh, gt_2d_joints)
+        loss_2d_joints = joints2dLoss(criterion_2d_keypoints, pred_2d_joints, gt_2d_joints)
+        #loss_3d_joints = loss_3d_joints + loss_reg_3d_joints
 
-        loss_3d_joints = loss_3d_joints + loss_reg_3d_joints
-
+        # loss = args.joints_loss_weight * loss_3d_joints + \
+        #        args.vertices_loss_weight * loss_vertices + \
+        #        args.vertices_loss_weight * loss_2d_joints 
         loss = args.joints_loss_weight * loss_3d_joints + \
-               args.vertices_loss_weight * loss_vertices + \
-               args.vertices_loss_weight * loss_2d_joints 
+               args.joints_loss_weight * loss_2d_joints 
 
         # Update logs
         #log_loss_pose.update(loss_pose.item(), batch_size)
         #log_loss_betas.update(loss_betas.item(), batch_size)
         log_loss_3djoints.update(loss_3d_joints.item(), batch_size)
         log_loss_2djoints.update(loss_2d_joints.item(), batch_size)
-        log_loss_vertices.update(loss_vertices.item(), batch_size)
+        #log_loss_vertices.update(loss_vertices.item(), batch_size)
         log_losses.update(loss.item(), batch_size)
         
         # Backward-pass
@@ -249,8 +252,8 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                 ['eta: {eta}', 'epoch: {ep}', 'iter: {iter}', 'max mem : {memory:.0f}',]
                 ).format(eta=eta_string, ep=epoch, iter=iteration, 
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0) 
-                + '  loss: {:.4f}, 3d joint loss: {:.4f}, vertex loss: {:.4f}, compute time avg: {:.4f}, data time avg: {:.4f}, lr: {:.6f}'.format(
-                    log_losses.avg, log_loss_3djoints.avg, log_loss_vertices.avg, batch_time.avg, data_time.avg, 
+                + '  loss: {:.4f}, 3d joint loss: {:.4f}, 2d joint loss: {:.4f}, compute time avg: {:.4f}, data time avg: {:.4f}, lr: {:.6f}'.format(
+                    log_losses.avg, log_loss_3djoints.avg, log_loss_2djoints.avg, batch_time.avg, data_time.avg, 
                     optimizer.param_groups[0]['lr'])
             )
                 
@@ -261,9 +264,9 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
                 visual_imgs = visualizeMesh(renderer,
                                             annotations['ori_img'].detach(),
                                             annotations['joints_2d'].detach(),
-                                            pred_vertices.detach(), 
+                                            gt_vertices.detach(), 
                                             pred_camera.detach(),
-                                            pred_2d_joints_from_mesh.detach())
+                                            pred_2d_joints.detach())
                 #visual_imgs = visual_imgs.transpose(0,1)
                 #visual_imgs = visual_imgs.transpose(1,2)
                 visual_imgs = torch.einsum("abc -> bca", visual_imgs)

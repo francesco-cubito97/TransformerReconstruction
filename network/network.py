@@ -202,34 +202,41 @@ class TransRecon_Network(torch.nn.Module):
         self.trans_encoder = trans_encoder
 
         self.cam_param_fc1 = torch.nn.Linear(3, 1)
-        self.cam_param_fc2 = torch.nn.Linear(cfg.JOIN_NUM, 150) 
-        self.cam_param_fc3 = torch.nn.Linear(150, 3)
+        self.cam_param_fc2 = torch.nn.Linear(cfg.JOIN_NUM, 16) 
+        self.cam_param_fc3 = torch.nn.Linear(16, 3)
 
     def forward(self, images, mano_model, mesh_sampler, meta_masks=None, is_train=False):
         batch_size = images.size(0)
         
         # Generate a template for pose and betas. This will pass through the
         # network and will be modified
-        self.template_pose = torch.zeros((1,  48)).to(self.args.device)
-        self.template_betas = torch.zeros((1, 10)).to(self.args.device)
+        template_pose = torch.zeros((1,  48)).to(self.args.device)
+        template_betas = torch.zeros((1, 10)).to(self.args.device)
 
-        template_vertices, template_3d_joints = mano_model.layer(self.template_pose, self.template_betas)
+        template_vertices, template_3d_joints = mano_model.layer(template_pose, template_betas)
         template_vertices = template_vertices/1000.0
         template_3d_joints = template_3d_joints/1000.0
 
-        num_pose_params = self.template_pose.shape[1]
+        # Normalize results
+        template_root = template_3d_joints[:, cfg.J_NAME.index('Wrist'), :]
+        template_3d_joints = template_3d_joints - template_root[:, None, :]
+        template_vertices = template_vertices - template_root[:, None, :]
+        template_vertices_sub = template_vertices_sub - template_root[:, None, :]
+        num_joints = template_3d_joints.shape[1]
+
+        #num_pose_params = self.template_pose.shape[1]
 
         # Concatenate templates and then duplicate to batch size
-        
-        ref_params = torch.cat([self.template_pose, self.template_betas], dim=1)
-        ref_params = ref_params.expand(batch_size, -1, -1)
+        # Use only 3d joints with shape [21, 3]
+        ref_params = template_3d_joints#torch.cat([self.template_pose, self.template_betas], dim=1)
+        ref_params = ref_params.expand(batch_size, -1, -1) # size [bs, 21, 3]
 
         # Extract global image feature using a CNN backbone
-        image_feat = self.backbone(images)
+        image_feat = self.backbone(images) # size [bs, 576]
 
         # Concatenate image feat and template parameters
-        image_feat = image_feat.view(batch_size, 1, image_feat.shape[1]).expand(-1, ref_params.shape[1], -1)
-        features = torch.cat([ref_params, image_feat], dim=2)
+        image_feat = image_feat.view(batch_size, 1, 576).expand(-1, ref_params.shape[1], -1)
+        features = torch.cat([ref_params, image_feat], dim=2) # size [bs, 21, 576+3]
 
         if is_train==True:
             # Apply mask vertex/joint modeling
@@ -245,24 +252,24 @@ class TransRecon_Network(torch.nn.Module):
             features = self.trans_encoder(features)
 
         # Get predicted parameters
-        pred_pose = features[:, :num_pose_params, :]
-        pred_betas = features[:, num_pose_params:, :]
+        pred_3d_joints = features[:, :num_joints, :]
+        #pred_betas = features[:, num_pose_params:, :]
 
         #self.args.logger.createLog("NETWORK", "Requires_grad inside network: pose={} betas={}".format(pred_pose.requires_grad, pred_betas.requires_grad))
 
         # Pass predicted pose and betas through MANO layer
         # to complete forward pass
         
-        pred_vertices, pred_3d_joints = mano_model.layer(pred_pose.view(batch_size, pred_pose.shape[1]), pred_betas.view(batch_size, pred_betas.shape[1]))
+        #pred_vertices, pred_3d_joints = mano_model.layer(pred_pose.view(batch_size, pred_pose.shape[1]), pred_betas.view(batch_size, pred_betas.shape[1]))
         
         # Subsample the number of vertices to simplify the camera
         # parameters network the most possible
-        pred_vertices_sub = mesh_sampler.downsample(pred_vertices)
+        #pred_vertices_sub = mesh_sampler.downsample(pred_vertices)
         
         
         #self.args.logger.createLog("NETWORK", "Predicted vertices downsampled shape: {}".format(pred_vertices_sub.shape))
 
-        predictions = torch.cat([pred_vertices_sub, pred_3d_joints], dim=1)
+        predictions = pred_3d_joints#torch.cat([pred_vertices_sub, pred_3d_joints], dim=1)
         
         # Learn camera parameters from predicted vertices and joints
         cam_params = self.cam_param_fc1(predictions)
@@ -275,8 +282,10 @@ class TransRecon_Network(torch.nn.Module):
         #pred_vertices = pred_vertices.transpose(1, 2)
 
         if self.config.output_attentions==True:
-            return (cam_params, pred_3d_joints, pred_vertices_sub,
-                    pred_vertices, pred_pose, pred_betas, hidden_states, att)
+            #return (cam_params, pred_3d_joints, pred_vertices_sub,
+            #        pred_vertices, pred_pose, pred_betas, hidden_states, att)
+            return (cam_params, pred_3d_joints, hidden_states, att)
         else:
-            return (cam_params, pred_3d_joints, pred_vertices_sub, 
-                    pred_vertices, pred_pose, pred_betas)
+            #return (cam_params, pred_3d_joints, pred_vertices_sub, 
+            #        pred_vertices, pred_pose, pred_betas)
+            return (cam_params, pred_3d_joints)

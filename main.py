@@ -85,7 +85,7 @@ def parseArguments():
                         "hidden_size / num_attention_heads should be in integer.")
     parser.add_argument("--intermediate_size", default=-1, type=int, required=False, 
                         help="Update model config if given.")
-    parser.add_argument("--input_feat_dim", default='576,128,32', type=str, 
+    parser.add_argument("--input_feat_dim", default='579,128,32', type=str, 
                         help="Input image feature dimensions")          
     parser.add_argument("--hidden_feat_dim", default='256,64,16', type=str, 
                         help="Hidden image freature dimensions")   
