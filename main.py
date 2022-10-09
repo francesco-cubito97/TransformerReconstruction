@@ -85,9 +85,9 @@ def parseArguments():
                         "hidden_size / num_attention_heads should be in integer.")
     parser.add_argument("--intermediate_size", default=-1, type=int, required=False, 
                         help="Update model config if given.")
-    parser.add_argument("--input_feat_dim", default='1025,128', type=str, 
+    parser.add_argument("--input_feat_dim", default='576,128', type=str, 
                         help="Input image feature dimensions")          
-    parser.add_argument("--hidden_feat_dim", default='512,64', type=str, 
+    parser.add_argument("--hidden_feat_dim", default='256,64', type=str, 
                         help="Hidden image freature dimensions")   
 
     parser.add_argument("--multiscale_inference", default=False, type=bool)
@@ -119,9 +119,8 @@ def main(args):
 
     input_feat_dim = [int(item) for item in args.input_feat_dim.split(',')]
     hidden_feat_dim = [int(item) for item in args.hidden_feat_dim.split(',')]
-    # The final output of transformers will be the vector of pose+shape parameters
-    # to pass throught the Mano layer
-    output_feat_dim = input_feat_dim[1:] + [1]
+    # The final layer will output the 3D joints
+    output_feat_dim = input_feat_dim[1:] + [3]
     
     if args.type=="test" and args.saved_checkpoint!=None and args.saved_checkpoint!='None':
         args.logger.createLog("MAIN", "Evaluation: Loading from checkpoint {}".format(args.saved_checkpoint))
@@ -160,8 +159,8 @@ def main(args):
         #backbone = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.DEFAULT)
         backbone = mobilenet_v3_small(pretrained=True)
         # Remove the classification module
-        classifier = list(backbone.classifier.children())[:-1]
-        backbone.classifier = nn.Sequential(*classifier)
+        classifier = list(backbone.classifier.children())[:-4]
+        backbone.classifier = nn.Sequential(*classifier) # ouput size [batch_size, 576]
 
         # Compose the final neural network
         trans_encoder = torch.nn.Sequential(*trans_encoder)
