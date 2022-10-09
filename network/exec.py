@@ -183,8 +183,8 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         gt_3d_joints_with_tag[:, :, :3] = gt_3d_joints
 
         # Prepare masks for 3d joints modeling
-        #mpm_mask_ = mpm_mask.expand(-1, -1, 576)
-        mjm_mask_ = mjm_mask.expand(-1, -1, 576)
+        #mpm_mask_ = mpm_mask.expand(-1, -1, 579)
+        mjm_mask_ = mjm_mask.expand(-1, -1, 579)
         meta_masks = mjm_mask_#torch.cat([mpm_mask_, mbm_mask_], dim=1)
         
         # Forward-pass
