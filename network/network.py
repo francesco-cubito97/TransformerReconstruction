@@ -221,7 +221,7 @@ class TransRecon_Network(torch.nn.Module):
         template_root = template_3d_joints[:, cfg.J_NAME.index('Wrist'), :]
         template_3d_joints = template_3d_joints - template_root[:, None, :]
         template_vertices = template_vertices - template_root[:, None, :]
-        template_vertices_sub = template_vertices_sub - template_root[:, None, :]
+        #template_vertices_sub = template_vertices_sub - template_root[:, None, :]
         num_joints = template_3d_joints.shape[1]
 
         #num_pose_params = self.template_pose.shape[1]
