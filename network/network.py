@@ -15,7 +15,7 @@ from manopth.manolayer import ManoLayer
 from . import mano_config as cfg
 
 class Mano(nn.Module):
-    def __init__(self):
+    def __init__(self, args):
         super(Mano, self).__init__()
 
         self.mano_dir = 'metro/modeling/data'
