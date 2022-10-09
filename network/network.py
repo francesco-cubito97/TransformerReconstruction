@@ -21,7 +21,7 @@ class Mano(nn.Module):
         self.mano_dir = 'metro/modeling/data'
         self.layer = self.get_layer()
         self.vertex_num = 778
-        self.face = self.layer.th_faces.numpy()
+        self.faces = self.layer.th_faces.numpy()
         self.joint_regressor = self.layer.th_J_regressor.numpy()
         
         self.joint_num = 21
