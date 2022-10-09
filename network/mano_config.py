@@ -28,7 +28,7 @@ J_NAME = ('Wrist', 'Thumb_1', 'Thumb_2', 'Thumb_3', 'Thumb_4', 'Index_1', 'Index
 'Middle_2', 'Middle_3', 'Middle_4', 'Ring_1', 'Ring_2', 'Ring_3', 'Ring_4', 'Pinky_1', 'Pinky_2', 'Pinky_3', 'Pinky_4')
 
 # Joints number
-JOIN_NUM = len(J_NAME)
+JOIN_NUM = 21
 
 # The wrist is considered the root joint
 ROOT_INDEX = 0

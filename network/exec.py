@@ -128,9 +128,9 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
     # Define loss function (criterion) and optimizer
     criterion_2d_keypoints = torch.nn.MSELoss(reduction='none').to(args.device)
     criterion_joints = torch.nn.MSELoss(reduction='none').to(args.device)
-    criterion_vertices = torch.nn.L1Loss().to(args.device)
-    criterion_pose = torch.nn.L1Loss().to(args.device)
-    criterion_betas = torch.nn.L1Loss().to(args.device)
+    #criterion_vertices = torch.nn.L1Loss().to(args.device)
+    #criterion_pose = torch.nn.L1Loss().to(args.device)
+    #criterion_betas = torch.nn.L1Loss().to(args.device)
 
     start_training_time = time.time()
     end = time.time()
@@ -140,11 +140,11 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
     batch_time = AverageMeter()
     data_time = AverageMeter()
     log_losses = AverageMeter()
-    log_loss_pose = AverageMeter()
-    log_loss_betas = AverageMeter()
+    #log_loss_pose = AverageMeter()
+    #log_loss_betas = AverageMeter()
     log_loss_2djoints = AverageMeter()
     log_loss_3djoints = AverageMeter()
-    log_loss_vertices = AverageMeter()
+    #log_loss_vertices = AverageMeter()
     
     for iteration, (img_keys, images, annotations) in enumerate(train_dataloader):
         
@@ -164,8 +164,8 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         has_3d_joints = has_mesh
         #has_2d_joints = has_mesh
 
-        mpm_mask = annotations['mpm_mask'].cuda()
-        mbm_mask = annotations['mbm_mask'].cuda()
+        #mpm_mask = annotations['mpm_mask'].cuda()
+        mjm_mask = annotations['mjm_mask'].cuda()
 
         # Generate mesh from pose and betas
         gt_vertices, gt_3d_joints = mano_model.layer(gt_pose, gt_betas)
@@ -182,10 +182,10 @@ def run(args, train_dataloader, TransRecon_model, mano_model, renderer, mesh_sam
         gt_3d_joints_with_tag = torch.ones((batch_size, gt_3d_joints.shape[1], 4)).cuda()
         gt_3d_joints_with_tag[:, :, :3] = gt_3d_joints
 
-        # Prepare masks for mask pose/betas modeling
-        mpm_mask_ = mpm_mask.expand(-1, -1, 1025)
-        mbm_mask_ = mbm_mask.expand(-1, -1, 1025)
-        meta_masks = torch.cat([mpm_mask_, mbm_mask_], dim=1)
+        # Prepare masks for 3d joints modeling
+        #mpm_mask_ = mpm_mask.expand(-1, -1, 576)
+        mjm_mask_ = mjm_mask.expand(-1, -1, 576)
+        #meta_masks = torch.cat([mpm_mask_, mbm_mask_], dim=1)
         
         # Forward-pass
         pred_camera, pred_3d_joints, pred_vertices_sub, pred_vertices, pred_pose, pred_betas = TransRecon_model(images, mano_model, mesh_sampler, 

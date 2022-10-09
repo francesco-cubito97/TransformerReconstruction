@@ -14,41 +14,36 @@ from manopth.manolayer import ManoLayer
 
 from . import mano_config as cfg
 
-class Mano(nn.Module):
-    def __init__(self, args):
-        super(Mano, self).__init__()
+class MANO(nn.Module):
+    def __init__(self):
+        super(MANO, self).__init__()
 
-        # Right hand pkl mano model
-        self.layer = ManoLayer(flat_hand_mean=args.flat_hand_mean,
-                         mano_root=cfg.data_path,
-                         ncomps=args.mano_ncomps,
-                         use_pca=args.use_pca,
-                         root_rot_mode=args.root_rot_mode,
-                         joint_rot_mode=args.joint_rot_mode)
-
-        self.vertices_num = cfg.VERT_NUM
-        self.faces = self.layer.th_faces.numpy()
+        self.mano_dir = 'metro/modeling/data'
+        self.layer = self.get_layer()
+        self.vertex_num = 778
+        self.face = self.layer.th_faces.numpy()
         self.joint_regressor = self.layer.th_J_regressor.numpy()
         
-        self.joints_num = len(cfg.J_NAME)
-        self.joints_name = cfg.J_NAME
-        self.skeleton = cfg.SKLT_DEF
-        self.root_joint_idx = cfg.ROOT_INDEX
+        self.joint_num = 21
+        self.joints_name = ('Wrist', 'Thumb_1', 'Thumb_2', 'Thumb_3', 'Thumb_4', 'Index_1', 'Index_2', 'Index_3', 'Index_4', 'Middle_1', 'Middle_2', 'Middle_3', 'Middle_4', 'Ring_1', 'Ring_2', 'Ring_3', 'Ring_4', 'Pinky_1', 'Pinky_2', 'Pinky_3', 'Pinky_4')
+        # Define the connections between joints
+        self.skeleton = ( (0,1), (0,5), (0,9), (0,13), (0,17), (1,2), (2,3), (3,4), (5,6), (6,7), (7,8), (9,10), (10,11), (11,12), (13,14), (14,15), (15,16), (17,18), (18,19), (19,20) )
+        self.root_joint_idx = self.joints_name.index('Wrist')
 
         # Add fingertips to joint_regressor
-        self.fingertip_vertex_idx = cfg.FINGERTIPS_RIGHT
-        
-        # One-Hot-Encoding joints vectors
-        thumbtip_onehot = np.array([1 if i == self.fingertip_vertex_idx[0] else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
-        indextip_onehot = np.array([1 if i == self.fingertip_vertex_idx[1] else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
-        middletip_onehot = np.array([1 if i == self.fingertip_vertex_idx[2] else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
-        ringtip_onehot = np.array([1 if i == self.fingertip_vertex_idx[3] else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
-        pinkytip_onehot = np.array([1 if i == self.fingertip_vertex_idx[4] else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
-        
+        self.fingertip_vertex_idx = [745, 317, 444, 556, 673] # mesh vertex idx (right hand)
+        thumbtip_onehot = np.array([1 if i == 745 else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
+        indextip_onehot = np.array([1 if i == 317 else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
+        middletip_onehot = np.array([1 if i == 444 else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
+        ringtip_onehot = np.array([1 if i == 556 else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
+        pinkytip_onehot = np.array([1 if i == 673 else 0 for i in range(self.joint_regressor.shape[1])], dtype=np.float32).reshape(1,-1)
         self.joint_regressor = np.concatenate((self.joint_regressor, thumbtip_onehot, indextip_onehot, middletip_onehot, ringtip_onehot, pinkytip_onehot))
-        self.joint_regressor = self.joint_regressor[[0, 13, 14, 15, 16, 1, 2, 3, 17, 4, 5, 6, 18, 10, 11, 12, 19, 7, 8, 9, 20], :]
+        self.joint_regressor = self.joint_regressor[[0, 13, 14, 15, 16, 1, 2, 3, 17, 4, 5, 6, 18, 10, 11, 12, 19, 7, 8, 9, 20],:]
         joint_regressor_torch = torch.from_numpy(self.joint_regressor).float()
         self.register_buffer('joint_regressor_torch', joint_regressor_torch)
+
+    def get_layer(self):
+        return ManoLayer(mano_root=cfg.data_path, flat_hand_mean=False, use_pca=False) # load right hand MANO model
 
     # def getLayer(self):
     #     return ManoLayer(mano_root=path.join(self.mano_dir), 
@@ -207,22 +202,20 @@ class TransRecon_Network(torch.nn.Module):
         self.trans_encoder = trans_encoder
 
         self.cam_param_fc1 = torch.nn.Linear(3, 1)
-        self.cam_param_fc2 = torch.nn.Linear(cfg.VERT_SUB_NUM + cfg.JOIN_NUM, 150) 
+        self.cam_param_fc2 = torch.nn.Linear(cfg.JOIN_NUM, 150) 
         self.cam_param_fc3 = torch.nn.Linear(150, 3)
 
     def forward(self, images, mano_model, mesh_sampler, meta_masks=None, is_train=False):
         batch_size = images.size(0)
-        # Generate pose and shape template vectors
-        if self.args.root_rot_mode == 'axisang':
-            rot = 3
-        else:
-            rot = 6
-    
-        if not self.args.use_pca:
-            self.args.mano_ncomps = 45
+        
+        # Generate a template for pose and betas. This will pass through the
+        # network and will be modified
+        self.template_pose = torch.zeros((1,  48)).to(self.args.device)
+        self.template_betas = torch.zeros((1, 10)).to(self.args.device)
 
-        self.template_pose = torch.zeros((1,  self.args.mano_ncomps + rot, 1)).to(self.args.device)
-        self.template_betas = torch.zeros((1, 10, 1)).to(self.args.device)
+        template_vertices, template_3d_joints = mano_model.layer(self.template_pose, self.template_betas)
+        template_vertices = template_vertices/1000.0
+        template_3d_joints = template_3d_joints/1000.0
 
         num_pose_params = self.template_pose.shape[1]
 

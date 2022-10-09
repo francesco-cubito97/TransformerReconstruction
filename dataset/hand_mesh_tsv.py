@@ -266,26 +266,27 @@ class HandMeshTSVDataset(object):
         # Masking percantage
         # We observe that 0% or 5% works better for 3D hand mesh
         # We think this is probably because 3D vertices are quite sparse in the down-sampled hand mesh 
-        mbm_percent = 0.0 # or 0.05
+        mjm_percent = 0.05 # or 0.0
         ###################################
 
-        mpm_mask = np.ones((48, 1))
-        if self.is_train:
-            num_pose_params = mpm_mask.shape[0]
-            pb = np.random.random_sample()
-            masked_num = int(pb * mbm_percent * num_pose_params) # at most x% of the joints could be masked
-            indices = np.random.choice(np.arange(num_pose_params),replace=False,size=masked_num)
-            mpm_mask[indices, :] = 0.0
-        mpm_mask = torch.from_numpy(mpm_mask).float()
+        # mpm_mask = np.ones((48, 1))
+        # if self.is_train:
+        #     num_pose_params = mpm_mask.shape[0]
+        #     pb = np.random.random_sample()
+        #     masked_num = int(pb * mbm_percent * num_pose_params) # at most x% of the joints could be masked
+        #     indices = np.random.choice(np.arange(num_pose_params),replace=False,size=masked_num)
+        #     mpm_mask[indices, :] = 0.0
+        # mpm_mask = torch.from_numpy(mpm_mask).float()
 
-        mbm_mask = np.ones((10, 1))
+        
+        mjm_mask = np.ones((21,1))
         if self.is_train:
-            num_shape_params = mbm_mask.shape[0]
+            num_joints = 21
             pb = np.random.random_sample()
-            masked_num = int(pb * mbm_percent * num_shape_params) # at most x% of the vertices could be masked
-            indices = np.random.choice(np.arange(num_shape_params),replace=False,size=masked_num)
-            mbm_mask[indices, :] = 0.0
-        mbm_mask = torch.from_numpy(mbm_mask).float()
+            masked_num = int(pb * mjm_percent * num_joints) # at most x% of the joints could be masked
+            indices = np.random.choice(np.arange(num_joints),replace=False,size=masked_num)
+            mjm_mask[indices,:] = 0.0
+        mjm_mask = torch.from_numpy(mjm_mask).float()
 
         meta_data = {}
         meta_data['ori_img'] = img
@@ -294,8 +295,8 @@ class HandMeshTSVDataset(object):
         meta_data['joints_3d'] = torch.from_numpy(joints_3d_transformed).float()
         meta_data['has_3d_joints'] = has_3d_joints
         meta_data['has_smpl'] = has_smpl
-        meta_data['mpm_mask'] = mpm_mask
-        meta_data['mbm_mask'] = mbm_mask
+        #meta_data['mpm_mask'] = mpm_mask
+        meta_data['mjm_mask'] = mjm_mask
 
         # Get 2D keypoints and apply augmentation transforms
         meta_data['has_2d_joints'] = has_2d_joints
